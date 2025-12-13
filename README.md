@@ -1,8 +1,7 @@
 # AI Job Hunter + Multi-Agent Auto-Application System
 
-🚀 **Winning Hackathon Submission for Devpost**
+🚀 **Hackathon Submission for AI Assemble**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)](https://nodejs.org/)
 [![Kestra](https://img.shields.io/badge/kestra-workflow-orange.svg)](https://kestra.io/)
