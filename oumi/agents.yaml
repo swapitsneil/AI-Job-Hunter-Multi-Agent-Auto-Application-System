@@ -1,0 +1,179 @@
+# AI Job Hunter - Oumi Multi-Agent System
+# =======================================
+#
+# This configuration defines the three core agents that power the job application pipeline:
+# 1. JobAnalyzerAgent - Analyzes job requirements
+# 2. ResumeOptimizerAgent - Optimizes candidate resume for target job
+# 3. CoverLetterAgent - Generates tailored cover letters
+#
+# CRITICAL: All agents use ONLY mistralai/devstral-2512:free
+# All API keys use placeholders - NEVER commit real secrets
+
+version: "1.0"
+agents:
+  # Agent 1: Job Analyzer
+  - name: JobAnalyzerAgent
+    description: "Analyzes job postings to extract key requirements, skills, and qualifications"
+    model: "mistralai/devstral-2512:free"
+    temperature: 0.3
+    max_tokens: 1024
+    input_schema:
+      type: object
+      properties:
+        job:
+          type: object
+          description: "Complete job posting data"
+          required: true
+        config:
+          type: object
+          description: "Additional configuration options"
+    output_schema:
+      type: object
+      properties:
+        responsibilities:
+          type: array
+          items:
+            type: string
+          description: "List of key responsibilities from job posting"
+        must_have_skills:
+          type: array
+          items:
+            type: string
+          description: "Required skills for the position"
+        preferred_skills:
+          type: array
+          items:
+            type: string
+          description: "Nice-to-have skills for the position"
+        experience_estimate:
+          type: string
+          description: "Estimated years of experience required"
+        keywords_found:
+          type: object
+          description: "Keywords matched for filtering"
+    template: "templates/job_analyzer.tpl"
+    retry_policy:
+      max_attempts: 3
+      delay_seconds: 5
+    error_handling:
+      fallback_response:
+        responsibilities: ["Job analysis failed - using default template"]
+        must_have_skills: ["data analysis", "python", "sql"]
+        preferred_skills: ["tableau", "power bi"]
+        experience_estimate: "1-2 years"
+
+  # Agent 2: Resume Optimizer
+  - name: ResumeOptimizerAgent
+    description: "Optimizes candidate resume to match target job requirements"
+    model: "mistralai/devstral-2512:free"
+    temperature: 0.5
+    max_tokens: 2048
+    input_schema:
+      type: object
+      properties:
+        job_analysis:
+          type: object
+          description: "Output from JobAnalyzerAgent"
+          required: true
+        resume:
+          type: string
+          description: "Candidate's original resume text"
+          required: true
+        candidate_profile:
+          type: object
+          description: "Additional candidate information"
+    output_schema:
+      type: object
+      properties:
+        optimized_resume:
+          type: string
+          description: "Optimized resume in markdown format"
+        changes_made:
+          type: array
+          items:
+            type: string
+          description: "List of changes made to original resume"
+        match_score:
+          type: number
+          description: "Score indicating how well resume matches job (0-1)"
+    template: "templates/resume_optimizer.tpl"
+    retry_policy:
+      max_attempts: 3
+      delay_seconds: 5
+    error_handling:
+      fallback_response:
+        optimized_resume: "# Optimized Resume\n\n## {{candidate_profile.name}}\n\n{{resume}}"
+        changes_made: ["Failed to optimize - using original resume"]
+        match_score: 0.5
+
+  # Agent 3: Cover Letter Generator
+  - name: CoverLetterAgent
+    description: "Generates tailored cover letters for job applications"
+    model: "mistralai/devstral-2512:free"
+    temperature: 0.7
+    max_tokens: 1536
+    input_schema:
+      type: object
+      properties:
+        job:
+          type: object
+          description: "Complete job posting data"
+          required: true
+        job_analysis:
+          type: object
+          description: "Output from JobAnalyzerAgent"
+          required: true
+        optimized_resume:
+          type: string
+          description: "Optimized resume text"
+          required: true
+        candidate:
+          type: object
+          description: "Complete candidate information"
+          required: true
+    output_schema:
+      type: object
+      properties:
+        cover_letter:
+          type: string
+          description: "Generated cover letter text"
+        key_points:
+          type: array
+          items:
+            type: string
+          description: "Key points highlighted in cover letter"
+        tone:
+          type: string
+          description: "Tone used in cover letter (professional, enthusiastic, etc.)"
+    template: "templates/cover_letter.tpl"
+    retry_policy:
+      max_attempts: 3
+      delay_seconds: 5
+    error_handling:
+      fallback_response:
+        cover_letter: |-
+          Dear Hiring Manager,
+
+          I am writing to express my interest in the {{job.title}} position at {{job.company}}.
+
+          [Your cover letter content would appear here - generation failed]
+
+          Sincerely,
+          {{candidate.name}}
+        key_points: ["Position interest", "Basic qualifications"]
+        tone: "professional"
+
+# Global configuration
+global:
+  api_base_url: "{{OUMI_BASE_URL}}"
+  api_key: "{{OUMI_API_KEY}}"
+  mistral_api_key: "{{MISTRAL_API_KEY}}"
+  rate_limits:
+    requests_per_minute: 60
+    concurrent_requests: 5
+  logging:
+    level: "INFO"
+    file: "/logs/oumi_agents.log"
+  monitoring:
+    enabled: true
+    metrics_endpoint: "/metrics"

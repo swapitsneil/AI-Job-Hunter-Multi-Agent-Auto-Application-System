@@ -1,0 +1,240 @@
+# AI Job Hunter - Kestra Workflow
+# ===============================
+#
+# This workflow orchestrates the job application pipeline:
+# 1. Loads scraped jobs from /outputs/master_jobs.json
+# 2. Filters and selects target job
+# 3. Calls Oumi agents for analysis and document generation
+# 4. Saves generated artifacts to structured output directories
+#
+# CRITICAL: All LLM calls use ONLY mistralai/devstral-2512:free
+# All API keys use placeholders - NEVER commit real secrets
+
+id: job_application_pipeline
+namespace: ai_job_hunter
+
+# Workflow inputs
+inputs:
+  - name: job_id
+    type: STRING
+    description: "ID of the job to apply for"
+    required: true
+  - name: candidate
+    type: JSON
+    description: "Candidate information including resume and profile"
+    required: true
+  - name: max_pages
+    type: INT
+    description: "Maximum pages to scrape per site"
+    defaults: 5
+
+# Workflow tasks
+tasks:
+  # Step 1: Load jobs from scraper output
+  - id: loadJobs
+    type: io.kestra.plugin.scripts.python.Commands
+    description: "Load jobs from master jobs file"
+    commands:
+      - python -c "import json; print(json.dumps(json.load(open('/outputs/master_jobs.json'))))"
+    outputDir: /tmp/kestra
+    outputFiles:
+      - jobs.json
+
+  # Step 2: Select specific job by ID
+  - id: selectJob
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    description: "Filter and select the target job"
+    tasks:
+      - id: filterJob
+        type: io.kestra.plugin.scripts.python.Commands
+        commands:
+          - |
+            import json
+            jobs = json.load(open('{{outputs.loadJobs.outputFiles['jobs.json']}}'))
+            selected = [j for j in jobs if j['job_id'] == '{{inputs.job_id}}']
+            if not selected:
+                raise Exception(f"Job {{inputs.job_id}} not found")
+            print(json.dumps(selected[0]))
+        outputDir: /tmp/kestra
+        outputFiles:
+          - selected_job.json
+
+  # Step 3: Call Job Analyzer Agent
+  - id: callJobAnalyzer
+    type: io.kestra.plugin.core.http.Request
+    description: "Analyze job requirements using Oumi JobAnalyzerAgent"
+    uri: "{{OUMI_BASE_URL}}/agents/job_analyzer"
+    method: POST
+    headers:
+      Authorization: "Bearer {{OUMI_API_KEY}}"
+      Content-Type: "application/json"
+    body: |
+      {
+        "job": {{outputs.selectJob.outputFiles['selected_job.json']}},
+        "model": "mistralai/devstral-2512:free",
+        "config": {
+          "temperature": 0.3,
+          "max_tokens": 1024
+        }
+      }
+    retry:
+      maxAttempt: 3
+      delay: PT5S
+      exponentialBackoff: true
+    outputDir: /tmp/kestra
+    outputFiles:
+      - job_analysis.json
+
+  # Step 4: Call Resume Optimizer Agent
+  - id: callResumeOptimizer
+    type: io.kestra.plugin.core.http.Request
+    description: "Optimize candidate resume for target job"
+    uri: "{{OUMI_BASE_URL}}/agents/resume_optimizer"
+    method: POST
+    headers:
+      Authorization: "Bearer {{OUMI_API_KEY}}"
+      Content-Type: "application/json"
+    body: |
+      {
+        "job_analysis": {{outputs.callJobAnalyzer.outputFiles['job_analysis.json']}},
+        "resume": {{inputs.candidate.resume}},
+        "candidate_profile": {{inputs.candidate.profile}},
+        "model": "mistralai/devstral-2512:free",
+        "config": {
+          "temperature": 0.5,
+          "max_tokens": 2048
+        }
+      }
+    retry:
+      maxAttempt: 3
+      delay: PT5S
+      exponentialBackoff: true
+    outputDir: /tmp/kestra
+    outputFiles:
+      - optimized_resume.json
+
+  # Step 5: Call Cover Letter Agent
+  - id: callCoverLetterAgent
+    type: io.kestra.plugin.core.http.Request
+    description: "Generate tailored cover letter"
+    uri: "{{OUMI_BASE_URL}}/agents/cover_letter"
+    method: POST
+    headers:
+      Authorization: "Bearer {{OUMI_API_KEY}}"
+      Content-Type: "application/json"
+    body: |
+      {
+        "job": {{outputs.selectJob.outputFiles['selected_job.json']}},
+        "job_analysis": {{outputs.callJobAnalyzer.outputFiles['job_analysis.json']}},
+        "optimized_resume": {{outputs.callResumeOptimizer.outputFiles['optimized_resume.json']}},
+        "candidate": {{inputs.candidate}},
+        "model": "mistralai/devstral-2512:free",
+        "config": {
+          "temperature": 0.7,
+          "max_tokens": 1536
+        }
+      }
+    retry:
+      maxAttempt: 3
+      delay: PT5S
+      exponentialBackoff: true
+    outputDir: /tmp/kestra
+    outputFiles:
+      - cover_letter.json
+
+  # Step 6: Save all artifacts to structured output
+  - id: saveArtifacts
+    type: io.kestra.plugin.scripts.python.Commands
+    description: "Save generated artifacts to output directory"
+    commands:
+      - |
+        import json
+        import os
+        from datetime import datetime
+
+        # Create output directory structure
+        job = json.load(open('{{outputs.selectJob.outputFiles['selected_job.json']}}'))
+        candidate = {{inputs.candidate}}
+
+        job_slug = job['title'].lower().replace(' ', '-')[:50]
+        candidate_id = candidate.get('id', 'candidate_' + datetime.now().strftime('%Y%m%d%H%M%S'))
+
+        output_dir = f"/outputs/{job_slug}/{candidate_id}"
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Save resume
+        with open(f"{output_dir}/resume.md", 'w') as f:
+            f.write(json.load(open('{{outputs.callResumeOptimizer.outputFiles['optimized_resume.json']}}'))['optimized_resume'])
+
+        # Save cover letter
+        with open(f"{output_dir}/cover_letter.txt", 'w') as f:
+            f.write(json.load(open('{{outputs.callCoverLetterAgent.outputFiles['cover_letter.json']}}'))['cover_letter'])
+
+        # Save metadata
+        metadata = {
+            "job_id": job['job_id'],
+            "candidate_id": candidate_id,
+            "timestamp": datetime.now().isoformat(),
+            "artifacts": {
+                "resume": f"{output_dir}/resume.md",
+                "cover_letter": f"{output_dir}/cover_letter.txt"
+            },
+            "analysis": json.load(open('{{outputs.callJobAnalyzer.outputFiles['job_analysis.json']}}'))
+        }
+
+        with open(f"{output_dir}/metadata.json", 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+        print(f"Artifacts saved to {output_dir}")
+
+  # Step 7: Log completion and send notification
+  - id: logCompletion
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      Job application pipeline completed successfully!
+      Job: {{outputs.selectJob.outputFiles['selected_job.json'].title}}
+      Candidate: {{inputs.candidate.name}}
+      Artifacts: /outputs/{{outputs.selectJob.outputFiles['selected_job.json'].title | lower | replace(' ', '-')[:50]}}/{{inputs.candidate.id}}
+      Status: SUCCESS
+
+# Error handling configuration
+errors:
+  - id: handleErrors
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: logError
+        type: io.kestra.plugin.core.log.Log
+        message: |
+          Pipeline failed!
+          Job ID: {{inputs.job_id}}
+          Error: {{taskrun.value}}
+          Stage: {{taskrun.taskId}}
+        level: ERROR
+
+      - id: notifyFailure
+        type: io.kestra.plugin.core.http.Request
+        uri: "{{KESTRA_WEBHOOK_URL}}"
+        method: POST
+        headers:
+          Authorization: "Bearer {{KESTRA_API_TOKEN}}"
+          Content-Type: "application/json"
+        body: |
+          {
+            "event": "pipeline_failed",
+            "workflow": "job_application_pipeline",
+            "job_id": "{{inputs.job_id}}",
+            "error": "{{taskrun.value}}",
+            "stage": "{{taskrun.taskId}}",
+            "timestamp": "{{execution.startDate}}"
+          }
+
+# Timeout and retry configuration
+timeout: PT30M
+retry:
+  maxAttempt: 1
+  delay: PT1M
+
+# Resource limits
+limits:
+  cpu: 2
+  memory: 2GB

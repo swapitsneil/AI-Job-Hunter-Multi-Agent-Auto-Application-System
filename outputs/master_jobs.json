@@ -1,0 +1,48 @@
+[
+  {
+    "title": "Junior Data Analyst (Remote)",
+    "company": "TechCorp Inc.",
+    "location": "Anywhere (Remote)",
+    "tags": ["entry-level", "remote", "data", "analyst"],
+    "job_url": "https://example.com/jobs/junior-data-analyst-001",
+    "description": "We are looking for a Junior Data Analyst to join our remote team. This entry-level position is perfect for recent graduates with a passion for data analysis. You will work with our data team to analyze business performance, create reports, and identify trends.",
+    "skills": ["Python", "SQL", "Excel", "Data Visualization", "Statistics"],
+    "source": "remoteok",
+    "date_posted": "2024-03-15",
+    "salary": "$50,000 - $65,000",
+    "is_remote": true,
+    "match_reasons": {
+      "role_keywords": ["data analyst", "analyst"],
+      "entry_keywords": ["entry-level", "junior"],
+      "remote_keywords": ["remote"]
+    },
+    "raw": {
+      "original_title": "Junior Data Analyst (Remote)",
+      "original_company": "TechCorp Inc.",
+      "scraped_at": "2024-03-16T10:30:00Z"
+    }
+  },
+  {
+    "title": "Entry Level Data Analyst",
+    "company": "DataSolutions LLC",
+    "location": "Remote (US Time Zones)",
+    "tags": ["entry-level", "remote", "data analyst", "fresher"],
+    "job_url": "https://example.com/jobs/entry-data-analyst-002",
+    "description": "DataSolutions is hiring Entry Level Data Analysts for our fully remote team. This position is ideal for recent college graduates with 0-1 years of experience. You will assist senior analysts with data collection, cleaning, and basic analysis.",
+    "skills": ["SQL", "Excel", "Tableau", "Power BI", "Data Cleaning"],
+    "source": "weworkremotely",
+    "date_posted": "2024-03-14",
+    "salary": "$45,000 - $60,000",
+    "is_remote": true,
+    "match_reasons": {
+      "role_keywords": ["data analyst"],
+      "entry_keywords": ["entry level", "entry-level", "fresher"],
+      "remote_keywords": ["remote", "fully remote"]
+    },
+    "raw": {
+      "original_title": "Entry Level Data Analyst",
+      "original_company": "DataSolutions LLC",
+      "scraped_at": "2024-03-16T10:35:00Z"
+    }
+  }
+]
