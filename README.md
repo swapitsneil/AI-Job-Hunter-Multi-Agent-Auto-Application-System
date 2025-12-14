@@ -234,22 +234,7 @@ AI-Job-Hunter/
 
 🔗 **[Live Demo](https://ai-job-hunter.vercel.app)** *(Placeholder - replace with actual URL)*
 
-## 🏆 Hackathon Awards
 
-- 🥇 Best Use of AI/ML
-- 🥈 Most Innovative Solution
-- 🥉 Best Automation Tool
-
-## 🤝 Team
-
-- **Project Lead**: [Your Name]
-- **AI Engineer**: [Your Name]
-- **Backend Developer**: [Your Name]
-- **DevOps Engineer**: [Your Name]
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
