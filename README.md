@@ -246,4 +246,21 @@ AI-Job-Hunter/
 
 ---
 
+## 🚧 Project Status
+
+- ✅ Job scraping and filtering
+- ✅ AI job analysis
+- ✅ Resume and cover letter generation
+- 🚧 Application automation expansion
+- 🚧 Dashboard and analytics (planned)
+
+## 👤 Author
+
+Swap Nicolson
+Solo Developer
+Focused on building practical AI automation systems
+
+⚠️ Security Notice
+This project uses placeholder API keys. Never commit real secrets to version control.
+
 **CRITICAL SECURITY NOTE**: This project uses placeholder API keys (`{{KEY_NAME}}`). Never commit real secrets to version control. Use environment variables or secret management systems for production deployment.
