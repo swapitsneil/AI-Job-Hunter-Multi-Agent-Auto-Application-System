@@ -253,14 +253,18 @@ AI-Job-Hunter/
 - ✅ Resume and cover letter generation
 - 🚧 Application automation expansion
 - 🚧 Dashboard and analytics (planned)
-
+---
 ## 👤 Author
 
 Swap Nicolson
 Solo Developer
 Focused on building practical AI automation systems
+---
+## 📬 Contact
 
-⚠️ Security Notice
-This project uses placeholder API keys. Never commit real secrets to version control.
+If you’d like to connect, collaborate, or discuss opportunities, feel free to reach out:
 
-**CRITICAL SECURITY NOTE**: This project uses placeholder API keys (`{{KEY_NAME}}`). Never commit real secrets to version control. Use environment variables or secret management systems for production deployment.
+- 📧 Email: **swapnilnicolson.201@gmail.com**
+- 💼 GitHub: https://github.com/swapitsneil
+
+I’m open to feedback, collaboration, and job opportunities.
